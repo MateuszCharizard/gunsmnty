@@ -1,15 +1,156 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* reset */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+
+/* other */
+.info {
+  margin: 20px 0;
+  text-align: center;
+}
+
+p {
+  color: #2e2e2e;
+  margin-bottom: 20px;
+}
+
+
+/* block-$ */
+.block-effect {
+  font-size: calc(8px + 6vw);
+}
+
+.block-reveal {
+  --t: calc(var(--td) + var(--d));
+
+  color: transparent;
+  padding: 4px;
+
+  position: relative;
+  overflow: hidden;
+
+  animation: revealBlock 0s var(--t) forwards;
+}
+
+.block-reveal::after {
+  content: '';
+
+  width: 0%;
+  height: 100%;
+  padding-bottom: 4px;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  background: var(--bc);
+  animation: revealingIn var(--td) var(--d) forwards, revealingOut var(--td) var(--t) forwards;
+}
+
+
+/* animations */
+@keyframes revealBlock {
+  100% {
+    color: #0f0f0f;
+  }
+}
+
+@keyframes revealingIn {
+
+  0% {
+    width: 0;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes revealingOut {
+
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+
+}
+
+.abs-site-link {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  color: hsla(0, 0%, 0%, .6);
+  font-size: 16px;
+}
+
+
+
+
+
+
+*{box-sizing: border-box;}
+
+
+
+
+
+/* General body styling to center content */
+body {
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+/* Button styling */
+.button {
+  --x: 50%;
+  --y: 50%;
+  
+  position: relative;
+  appearance: none;
+  padding: 1em 2em;
+  color: white;
+  cursor: pointer;
+  outline: none;
+  border-radius: 100px;
+  border: 2px solid transparent;
+  
+  /* Button background with radial gradient */
+  background: linear-gradient(#000, #000) padding-box, 
+              radial-gradient(farthest-corner at var(--x) var(--y), #00C9A7, #845EC2) border-box;
+
+  /* Add transition for a smoother effect on hover */
+  transition: background 0.3s ease;
+}
+
+/* Optional hover effect: Change the radial gradient position on hover */
+.button:hover {
+  --x: 70%;
+  --y: 30%;
+}
+
+
+
+
+
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +160,55 @@
   }
 }
 
+
+/* Light theme */
+html {
+  --background-color: #f0f0f0;
+  --text-color: #333;
+  --primary-color: #4f46e5; /* Example color for buttons or highlights */
+}
+
+/* Dark theme */
+/* Light theme (default) */
+html {
+  --background-color: #f0f0f0;
+  --text-color: #333;
+  --primary-color: #4f46e5;
+}
+
+/* Dark theme */
+html.dark {
+  --background-color: #121212;
+  --text-color: #e5e5e5;
+  --primary-color: #6366f1;
+}
+
+/* Apply the variables */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+button {
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: var(--primary-color);
+  opacity: 0.8;
+}
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+      display: none;
+  }
+ /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+}
 }
