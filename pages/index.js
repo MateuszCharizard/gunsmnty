@@ -3,24 +3,49 @@
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CSSTransition } from 'react-transition-group';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
 export default function Home() {
   const [lanyardData, setLanyardData] = useState(null);
   const [volume, setVolume] = useState(0.5);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [appleMusicData, setAppleMusicData] = useState(null);
-  const audioRef = useRef(null);
-  const discordId = '924822581117337691'; // Replace with your Discord ID
   const [isAvatarLoading, setIsAvatarLoading] = useState(true);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
+  const audioRef = useRef(null);
+  const discordId = '924822581117337691';
+
+  // Audio tracks with metadata
+  const audioTracks = [
+    {
+      id: '1',
+      name: 'Bubblegum',
+      artist: 'NewJeans',
+      src: 'https://r2.guns.lol/4432f0ed-aa51-4f9c-a8de-847cf59bd40e.mp3',
+      cover: 'https://i.snipp.gg/924822581117337691/69b1f07461b3ed00de93cf1b1a535651.jpg',
+    },
+    {
+      id: '2',
+      name: '24 Songs',
+      artist: 'Playboi Carti',
+      src: 'https://r2.guns.lol/ed85f99d-573b-4f70-a08f-00dce30a4891.mp3',
+      cover: 'https://i.snipp.gg/924822581117337691/2eb638b7711206fac5c8549357fd8af0.jpg',
+    },
+    {
+      id: '3',
+      name: 'On Tha Line',
+      artist: 'Yeat',
+      src: 'https://r2.guns.lol/181032ba-9209-4187-816e-a4a15d081e49.mp3',
+      cover: 'https://i.snipp.gg/924822581117337691/49fa4cc68dd59ded58028e7811db44de.jpg',
+    },
+  ];
+
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isAudioLoading, setIsAudioLoading] = useState(true);
 
   // Manage refs for activity boxes
   const activityRefs = useRef(new Map());
-  // Store previous activities to detect changes
   const prevActivitiesRef = useRef([]);
 
-  // Function to get or create a ref for an activity
   const getActivityRef = (key) => {
     if (!activityRefs.current.has(key)) {
       activityRefs.current.set(key, { current: null });
@@ -28,25 +53,23 @@ export default function Home() {
     return activityRefs.current.get(key);
   };
 
-  // Clean up refs that are no longer needed and update previous activities
+  // Clean up refs and update previous activities
   useEffect(() => {
     if (lanyardData && lanyardData.activities) {
       const currentActivities = lanyardData.activities
-        .filter(activity => activity.type !== 4)
+        .filter((activity) => activity.type !== 4)
         .map((activity, index) => ({
           ...activity,
           key: `${activity.type}-${activity.name}-${index}`,
         }));
 
-      // Update refs
-      const currentActivityKeys = currentActivities.map(activity => activity.key);
+      const currentActivityKeys = currentActivities.map((activity) => activity.key);
       for (const key of activityRefs.current.keys()) {
         if (!currentActivityKeys.includes(key)) {
           activityRefs.current.delete(key);
         }
       }
 
-      // Update previous activities
       prevActivitiesRef.current = currentActivities;
     }
   }, [lanyardData]);
@@ -63,7 +86,7 @@ export default function Home() {
         }
       } catch (error) {
         console.error('Error fetching Lanyard data:', error);
-        setIsContentLoaded(true); // Still mark as loaded to stop skeleton
+        setIsContentLoaded(true);
       }
     };
 
@@ -110,41 +133,50 @@ export default function Home() {
     };
   }, [discordId]);
 
-  // Mock Apple Music data fetch
-  useEffect(() => {
-    const mockAppleMusicFetch = () => {
-      setAppleMusicData({
-        song: 'Blinding Lights',
-        artist: 'The Weeknd',
-      });
-    };
-    mockAppleMusicFetch();
-  }, []);
-
-  // Handle audio playback and volume
+  // Handle audio playback and track switching
   useEffect(() => {
     const audio = audioRef.current;
     if (audio) {
+      audio.src = audioTracks[currentTrackIndex].src;
       audio.volume = volume;
-      const playAudio = async () => {
-        try {
-          await audio.play();
-        } catch (error) {
+      setIsAudioLoading(true);
+
+      const handleCanPlay = () => {
+        setIsAudioLoading(false);
+        audio.play().catch((error) => {
           console.log('Autoplay prevented:', error);
           const handleInteraction = () => {
             audio.play().catch((err) => console.log('Interaction play failed:', err));
             document.removeEventListener('click', handleInteraction);
           };
           document.addEventListener('click', handleInteraction);
-        }
+        });
       };
-      playAudio();
+
+      audio.addEventListener('canplay', handleCanPlay);
+
+      return () => {
+        audio.removeEventListener('canplay', handleCanPlay);
+      };
     }
-  }, [volume]);
+  }, [currentTrackIndex, volume]);
 
   // Toggle volume slider
   const toggleVolumeSlider = () => {
     setShowVolumeSlider((prev) => !prev);
+  };
+
+  // Skip to previous/next track
+  const skipPrevious = () => {
+    setCurrentTrackIndex((prev) =>
+      prev === 0 ? audioTracks.length - 1 : prev - 1
+    );
+  };
+
+  const skipNext = () => {
+    setCurrentTrackIndex((prev) =>
+      prev === audioTracks.length - 1 ? 0 : prev + 1
+    );
   };
 
   // Handle avatar load completion
@@ -164,20 +196,13 @@ export default function Home() {
   // Format activity details
   const getActivityDetails = (activity) => {
     switch (activity.type) {
-      case 0: // Playing a game
-        return activity.name ? `Playing ${activity.name}` : 'Playing a game';
-      case 1: // Streaming
-        return activity.details ? `Streaming ${activity.details}` : 'Streaming';
-      case 2: // Listening
-        return activity.details ? `Listening to ${activity.details}` : 'Listening';
-      case 3: // Watching
-        return activity.details ? `Watching ${activity.details}` : 'Watching';
-      case 4: // Custom status
-        return activity.state || activity.name || 'Custom Status';
-      case 5: // Competing
-        return activity.name ? `Competing in ${activity.name}` : 'Competing';
-      default:
-        return activity.name || 'Unknown Activity';
+      case 0: return activity.name ? `Playing ${activity.name}` : 'Playing a game';
+      case 1: return activity.details ? `Streaming ${activity.details}` : 'Streaming';
+      case 2: return activity.details ? `Listening to ${activity.details}` : 'Listening';
+      case 3: return activity.details ? `Watching ${activity.details}` : 'Watching';
+      case 4: return activity.state || activity.name || 'Custom Status';
+      case 5: return activity.name ? `Competing in ${activity.name}` : 'Competing';
+      default: return activity.name || 'Unknown Activity';
     }
   };
 
@@ -192,15 +217,13 @@ export default function Home() {
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
 
-  // Get activity icon URL (fixed for Minecraft and other apps)
+  // Get activity icon URL
   const getActivityIcon = (activity) => {
     if (activity.assets?.large_image) {
-      // Handle external assets (e.g., Minecraft)
       if (activity.assets.large_image.startsWith('mp:external/')) {
         const externalPath = activity.assets.large_image.replace('mp:external/', '');
         return `https://media.discordapp.net/external/${externalPath}?size=128`;
       }
-      // Handle app-specific assets (requires application_id)
       if (activity.application_id) {
         return `https://cdn.discordapp.com/app-assets/${activity.application_id}/${activity.assets.large_image}.png?size=128`;
       }
@@ -208,16 +231,16 @@ export default function Home() {
     return null;
   };
 
-  // Get custom status for the cloud
+  // Get custom status
   const getCustomStatus = () => {
-    const customStatus = lanyardData?.activities?.find(activity => activity.type === 4);
+    const customStatus = lanyardData?.activities?.find((activity) => activity.type === 4);
     if (customStatus) {
       return getActivityDetails(customStatus);
     }
     return lanyardData?.discord_status || 'Offline';
   };
 
-  // Determine which activities to animate (added or removed)
+  // Manage activities for animation
   const [activitiesToRender, setActivitiesToRender] = useState([]);
   const [enteringActivities, setEnteringActivities] = useState(new Set());
   const [exitingActivities, setExitingActivities] = useState(new Set());
@@ -226,26 +249,21 @@ export default function Home() {
     if (!lanyardData || !lanyardData.activities) return;
 
     const currentActivities = lanyardData.activities
-      .filter(activity => activity.type !== 4)
+      .filter((activity) => activity.type !== 4)
       .map((activity, index) => ({
         ...activity,
         key: `${activity.type}-${activity.name}-${index}`,
       }));
 
     const prevActivities = prevActivitiesRef.current || [];
+    const prevKeys = new Set(prevActivities.map((activity) => activity.key));
+    const currentKeys = new Set(currentActivities.map((activity) => activity.key));
 
-    // Find added and removed activities
-    const prevKeys = new Set(prevActivities.map(activity => activity.key));
-    const currentKeys = new Set(currentActivities.map(activity => activity.key));
+    const addedKeys = new Set([...currentKeys].filter((key) => !prevKeys.has(key)));
+    const removedKeys = new Set([...prevKeys].filter((key) => !currentKeys.has(key)));
 
-    const addedKeys = new Set([...currentKeys].filter(key => !prevKeys.has(key)));
-    const removedKeys = new Set([...prevKeys].filter(key => !currentKeys.has(key)));
-
-    // Update entering and exiting activities
     setEnteringActivities(addedKeys);
     setExitingActivities(removedKeys);
-
-    // Update activities to render
     setActivitiesToRender(currentActivities);
   }, [lanyardData]);
 
@@ -259,7 +277,6 @@ export default function Home() {
         ref={nodeRef}
         className="activity-box flex items-center space-x-4 p-4 bg-white/10 backdrop-blur-md rounded-lg border border-white/10 shadow-lg"
       >
-        {/* Activity Icon */}
         <div className="flex items-center justify-center">
           {getActivityIcon(activity) ? (
             <Image
@@ -281,11 +298,8 @@ export default function Home() {
             {activity.type === 0 ? '🎮' : activity.type === 2 ? '🎵' : activity.type === 4 ? '💬' : '📺'}
           </div>
         </div>
-        {/* Activity Details */}
         <div className="flex-1 flex flex-col justify-center">
-          <p className="text-md font-medium text-white glowingуж
-
-          glowing-text">{getActivityDetails(activity)}</p>
+          <p className="text-md font-medium text-white glowing-text">{getActivityDetails(activity)}</p>
           {activity.state && activity.type !== 4 && (
             <p className="text-sm text-white/60">{activity.state}</p>
           )}
@@ -293,7 +307,6 @@ export default function Home() {
             <p className="text-sm text-white/60">{activity.details}</p>
           )}
         </div>
-        {/* Activity Duration */}
         <div className="text-sm text-white/60 bg-white/20 rounded-full px-3 py-1">
           {getActivityDuration(activity)}
         </div>
@@ -307,7 +320,6 @@ export default function Home() {
           nodeRef={nodeRef}
           timeout={500}
           classNames="activity"
-          in={enteringActivities.has(activityKey) || !exitingActivities.has(activityKey)}
         >
           {content}
         </CSSTransition>
@@ -317,9 +329,76 @@ export default function Home() {
     return content;
   };
 
+  // Audio box component
+  const AudioBox = ({ trackIndex }) => {
+    const currentTrack = audioTracks[trackIndex];
+    const nodeRef = useRef(null);
+
+    return (
+      <CSSTransition
+        nodeRef={nodeRef}
+        in={trackIndex === currentTrackIndex}
+        timeout={300}
+        classNames="audio-box"
+        unmountOnExit
+      >
+        <div
+          ref={nodeRef}
+          className={`audio-box flex items-center space-x-4 p-4 bg-white/10 backdrop-blur-md rounded-lg border border-white/10 shadow-lg ${
+            isAudioLoading ? 'animate-pulse' : ''
+          }`}
+        >
+          <Image
+            src={currentTrack.cover}
+            alt={`${currentTrack.name} Album Cover`}
+            width={100}
+            height={100}
+            draggable="false"
+            className="rounded-xl border-2 border-black/40"
+          />
+          <div className="flex-1 flex flex-col justify-center">
+            <p className="text-sm text-white/60 glowing-text">Now Playing</p>
+            <p className="text-lg font-medium text-white glowing-text">{currentTrack.name}</p>
+            <p className="text-sm text-white/60">{currentTrack.artist}</p>
+          </div>
+          <div className="flex flex-col items-center space-y-2">
+            <div className="flex space-x-2">
+              <button
+                onClick={skipPrevious}
+                className="p-2 rounded-full hover:bg-white/20 transition-all duration-200 glowing-icon"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5 text-white"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+                </svg>
+              </button>
+              <button
+                onClick={skipNext}
+                className="p-2 rounded-full hover:bg-white/20 transition-all duration-200 glowing-icon"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5 text-white"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M18 6h-2v12h2zm-3.5 6l-8.5 6V6z" />
+                </svg>
+              </button>
+            </div>
+            <div className="text-xs text-white/60">{`${trackIndex + 1}/${audioTracks.length}`}</div>
+          </div>
+        </div>
+      </CSSTransition>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center relative overflow-hidden select-none">
-      {/* Background Video with Blur */}
       <video
         src="https://r2.guns.lol/afe3915a-1128-4e01-999a-7d989422f35c.mp4"
         autoPlay
@@ -329,46 +408,36 @@ export default function Home() {
         className="absolute inset-0 w-full h-full object-cover blur-sm"
       />
 
-      {/* Audio Player */}
-      <audio
-        ref={audioRef}
-        src="https://r2.guns.lol/4432f0ed-aa51-4f9c-a8de-847cf59bd40e.mp3"
-        loop
-        className="hidden"
-      />
+      <audio ref={audioRef} loop className="hidden" />
 
-      {/* Main Content */}
-      <div className={`relative z-10 flex flex-col items-center max-w-xl w-full p-6 bg-black/20 rounded-2xl backdrop-blur-sm border-2 border-white/5 transition-opacity duration-700 transition-max-height duration-500 ease-in-out overflow-hidden ${isContentLoaded ? 'opacity-100' : 'opacity-0'}`}>
+      <div
+        className={`relative z-10 flex flex-col items-center max-w-xl w-full p-6 bg-black/20 rounded-2xl backdrop-blur-sm border-2 border-white/5 transition-opacity duration-700 transition-max-height duration-500 ease-in-out overflow-hidden ${
+          isContentLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
         <div className="mb-6 w-full">
-          {/* Username */}
           <h1 className="text-4xl font-semibold text-white glowing-text text-center mb-2">mnty</h1>
           <h2 className="text-xl glowing-text text-white/80 text-center mb-4">
             Discord Username: {lanyardData?.discord_user?.username || 'culx'}
           </h2>
 
-          {/* Avatar */}
           <div className="relative flex justify-center mb-4">
             <div className="relative">
               {lanyardData?.discord_user?.avatar ? (
-                <Image
+                <img
                   src={`https://cdn.discordapp.com/avatars/${discordId}/${lanyardData.discord_user.avatar}.png?size=128`}
                   alt="Avatar"
-                  width={100}
-                  height={100}
-                  draggable={false}
-                  className={`rounded-full border-2 ${borderColor} transition-opacity duration-500 ${
+                  draggable="false"
+                  className={`rounded-full border-2 ${borderColor} transition-opacity duration-500 w-[100px] h-[100px] object-cover ${
                     isAvatarLoading ? 'opacity-0' : 'opacity-100'
                   }`}
                   onLoad={handleAvatarLoad}
                   onError={() => setIsAvatarLoading(false)}
-                  placeholder="empty"
                 />
               ) : (
                 <div
                   className={`rounded-full border-2 ${borderColor} w-[100px] h-[100px] bg-gray-200 flex items-center justify-center text-gray-500 text-xs`}
-                >
-                  {/* Placeholder */}
-                </div>
+                />
               )}
               {isAvatarLoading && lanyardData?.discord_user?.avatar && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -378,7 +447,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Cloud-shaped Status (Separate from PFP) */}
           <div className="flex justify-center mb-4">
             {lanyardData ? (
               <div className="cloud-box px-4 py-1 text-white/80">
@@ -393,23 +461,25 @@ export default function Home() {
             )}
           </div>
 
-          {/* Activity Boxes */}
           {lanyardData ? (
             <div className="mt-2 space-y-4">
-              {activitiesToRender.map((activity) => {
-                const shouldAnimate = enteringActivities.has(activity.key) || exitingActivities.has(activity.key);
-                return (
-                  <ActivityBox
-                    key={activity.key}
-                    activity={activity}
-                    shouldAnimate={shouldAnimate}
-                  />
-                );
-              })}
+              <TransitionGroup>
+                {activitiesToRender.map((activity) => {
+                  const shouldAnimate =
+                    enteringActivities.has(activity.key) ||
+                    exitingActivities.has(activity.key);
+                  return (
+                    <ActivityBox
+                      key={activity.key}
+                      activity={activity}
+                      shouldAnimate={shouldAnimate}
+                    />
+                  );
+                })}
+              </TransitionGroup>
             </div>
           ) : (
             <div className="mt-2 space-y-4">
-              {/* Skeleton for Activity Boxes */}
               {[1, 2].map((_, index) => (
                 <div
                   key={index}
@@ -427,23 +497,12 @@ export default function Home() {
           )}
         </div>
 
-        {/* Now Playing Section */}
-        <div className="flex mb-6 items-center space-x-4 p-4 bg-white/10 backdrop-blur-md rounded-lg border border-white/10 shadow-lg">
-          <Image
-            src="https://i.snipp.gg/924822581117337691/69b1f07461b3ed00de93cf1b1a535651.jpg"
-            alt="Bubblegum Album Cover"
-            width={100}
-            height={100}
-            draggable="false"
-            className="rounded-xl border-2 border-black/40"
-          />
-          <div className="flex-1 flex flex-col justify-center">
-            <p className="text-sm text-white/60 glowing-text">Now Playing</p>
-            <p className="text-lg font-medium text-white glowing-text">Bubblegum by NewJeans</p>
-          </div>
-        </div>
+        <TransitionGroup>
+          {audioTracks.map((_, index) => (
+            <AudioBox key={index} trackIndex={index} />
+          ))}
+        </TransitionGroup>
 
-        {/* Social Links */}
         <div className="flex space-x-4 mb-6">
           {[
             {
@@ -498,7 +557,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Volume Control */}
         <div className="relative flex items-center justify-center w-full">
           <button
             onClick={toggleVolumeSlider}
@@ -541,7 +599,7 @@ export default function Home() {
               type="range"
               min="0"
               max="1"
-              step="0.001"
+              step="0.01"
               value={volume}
               onChange={(e) => setVolume(parseFloat(e.target.value))}
               className="w-28 h-1 bg-white/20 rounded-full appearance-none cursor-pointer transition-all duration-200 ease-out"
@@ -549,20 +607,14 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Page Views */}
         <div className="absolute bottom-4 left-4 flex items-center space-x-1 text-sm text-white/70">
-          <svg
-            className="w-4 h-4"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 9a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5a5 5 0 0 1 5-5a5 5 0 0 1 5 5a5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5" />
           </svg>
           <span>1</span>
         </div>
       </div>
 
-      {/* Custom Styles */}
       <style jsx>{`
         .glowing-text {
           text-shadow: 0 0 16.5px #ffffff;
@@ -650,9 +702,8 @@ export default function Home() {
         }
         .activity-box {
           backdrop-filter: blur(10px);
-          transform-origin: left center; /* Set transform origin for rotation */
+          transform-origin: left center;
         }
-        /* Slide-in-from-left with Rotation Animation for Activities */
         .activity-enter {
           opacity: 0;
           transform: translateX(-50px) rotate(-10deg);
@@ -660,8 +711,7 @@ export default function Home() {
         .activity-enter-active {
           opacity: 1;
           transform: translateX(0) rotate(0deg);
-          transition: opacity 500ms ease-out,
-                      transform 500ms ease-out;
+          transition: opacity 500ms ease-out, transform 500ms ease-out;
         }
         .activity-exit {
           opacity: 1;
@@ -670,17 +720,32 @@ export default function Home() {
         .activity-exit-active {
           opacity: 0;
           transform: translateX(-50px) rotate(-10deg);
-          transition: opacity 500ms ease-out,
-                      transform 500ms ease-out;
+          transition: opacity 500ms ease-out, transform 500ms ease-out;
         }
-        /* Container Height Animation */
         .relative {
-          max-height: 1000px; /* Large enough to accommodate content */
+          max-height: 1200px;
           transition: max-height 500ms ease-in-out;
         }
-        /* Ensure the container shrinks when content is removed */
         .relative:has(.activity-exit-active) {
-          max-height: 500px; /* Adjust based on content size; this is an estimate */
+          max-height: 600px;
+        }
+        .audio-box-enter {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        .audio-box-enter-active {
+          opacity: 1;
+          transform: translateY(0);
+          transition: opacity 300ms ease-out, transform 300ms ease-out;
+        }
+        .audio-box-exit {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .audio-box-exit-active {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity 300ms ease-out, transform 300ms ease-out;
         }
       `}</style>
     </div>
