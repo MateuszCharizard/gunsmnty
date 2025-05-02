@@ -41,6 +41,7 @@ export default function Home() {
 
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isAudioLoading, setIsAudioLoading] = useState(true);
+  const [isCoverLoading, setIsCoverLoading] = useState(true);
 
   // Manage refs for activity boxes
   const activityRefs = useRef(new Map());
@@ -138,8 +139,8 @@ export default function Home() {
     const audio = audioRef.current;
     if (audio) {
       audio.src = audioTracks[currentTrackIndex].src;
-      audio.volume = volume;
       setIsAudioLoading(true);
+      setIsCoverLoading(true);
 
       const handleCanPlay = () => {
         setIsAudioLoading(false);
@@ -159,7 +160,15 @@ export default function Home() {
         audio.removeEventListener('canplay', handleCanPlay);
       };
     }
-  }, [currentTrackIndex, volume]);
+  }, [currentTrackIndex]);
+
+  // Update audio volume without restarting
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.volume = volume;
+    }
+  }, [volume]);
 
   // Toggle volume slider
   const toggleVolumeSlider = () => {
@@ -182,6 +191,11 @@ export default function Home() {
   // Handle avatar load completion
   const handleAvatarLoad = () => {
     setIsAvatarLoading(false);
+  };
+
+  // Handle cover load completion
+  const handleCoverLoad = () => {
+    setIsCoverLoading(false);
   };
 
   // Status border color
@@ -338,7 +352,7 @@ export default function Home() {
       <CSSTransition
         nodeRef={nodeRef}
         in={trackIndex === currentTrackIndex}
-        timeout={300}
+        timeout={600}
         classNames="audio-box"
         unmountOnExit
       >
@@ -348,15 +362,25 @@ export default function Home() {
             isAudioLoading ? 'animate-pulse' : ''
           }`}
         >
-          <Image
-            src={currentTrack.cover}
-            alt={`${currentTrack.name} Album Cover`}
-            width={100}
-            height={100}
-            draggable="false"
-            className="rounded-xl border-2 border-black/40"
-            
-          />
+          <div className="relative">
+            <Image
+              src={currentTrack.cover}
+              alt={`${currentTrack.name} Album Cover`}
+              width={100}
+              height={100}
+              draggable="false"
+              className={`rounded-xl border-2 border-black/40 transition-opacity duration-300 ${
+                isCoverLoading ? 'opacity-0' : 'opacity-100'
+              }`}
+              onLoad={handleCoverLoad}
+              onError={() => setIsCoverLoading(false)}
+            />
+            {isCoverLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-t-transparent border-gray-400 rounded-full animate-spin"></div>
+              </div>
+            )}
+          </div>
           <div className="flex-1 flex flex-col justify-center">
             <p className="text-sm text-white/60 glowing-text">Now Playing</p>
             <p className="text-lg font-medium text-white glowing-text">{currentTrack.name}</p>
@@ -498,13 +522,13 @@ export default function Home() {
           )}
         </div>
 
-        <TransitionGroup>
+        <TransitionGroup className="w-full">
           {audioTracks.map((_, index) => (
             <AudioBox key={index} trackIndex={index} />
           ))}
         </TransitionGroup>
 
-        <div className="flex space-x-4 mb-6">
+        <div className="flex space-x-6 mt-6 mb-5">
           {[
             {
               href: 'https://snapchat.com/add/itwasmattress',
@@ -732,21 +756,21 @@ export default function Home() {
         }
         .audio-box-enter {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateX(50px) scale(0.9);
         }
         .audio-box-enter-active {
           opacity: 1;
-          transform: translateY(0);
-          transition: opacity 300ms ease-out, transform 300ms ease-out;
+          transform: translateX(0) scale(1);
+          transition: opacity 600ms ease-in-out, transform 600ms ease-in-out;
         }
         .audio-box-exit {
           opacity: 1;
-          transform: translateY(0);
+          transform: translateX(0) scale(1);
         }
         .audio-box-exit-active {
           opacity: 0;
-          transform: translateY(20px);
-          transition: opacity 300ms ease-out, transform 300ms ease-out;
+          transform: translateX(-50px) scale(0.9);
+          transition: opacity 600ms ease-in-out, transform 600ms ease-in-out;
         }
       `}</style>
     </div>
