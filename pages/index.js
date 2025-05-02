@@ -18,17 +18,17 @@ export default function Home() {
   const audioTracks = [
     {
       id: '1',
-      name: 'Bubblegum',
-      artist: 'NewJeans',
-      src: 'https://r2.guns.lol/4432f0ed-aa51-4f9c-a8de-847cf59bd40e.mp3',
-      cover: 'https://i.snipp.gg/924822581117337691/69b1f07461b3ed00de93cf1b1a535651.jpg',
+      name: '2024',
+      artist: 'Playboi Carti',
+      src: 'https://r2.guns.lol/6c3f2c93-366e-4eae-8ccd-6830598a21f8.mp3',
+      cover: 'https://i.snipp.gg/924822581117337691/1d3c4336358d0d177efdfc9e639a4f64.png',
     },
     {
       id: '2',
-      name: '24 Songs',
-      artist: 'Playboi Carti',
-      src: 'https://r2.guns.lol/ed85f99d-573b-4f70-a08f-00dce30a4891.mp3',
-      cover: 'https://i.snipp.gg/924822581117337691/2eb638b7711206fac5c8549357fd8af0.jpg',
+      name: 'Timeless',
+      artist: 'Playboi Carti + The Weekend',
+      src: 'https://r2.guns.lol/0850220b-f57d-41d0-ae9c-8e801765dbf9.mp3',
+      cover: 'https://i.snipp.gg/924822581117337691/e681b251f581cba645b0040f71b27cba.png',
     },
     {
       id: '3',
@@ -355,6 +355,7 @@ export default function Home() {
             height={100}
             draggable="false"
             className="rounded-xl border-2 border-black/40"
+            
           />
           <div className="flex-1 flex flex-col justify-center">
             <p className="text-sm text-white/60 glowing-text">Now Playing</p>
@@ -400,7 +401,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center relative overflow-hidden select-none">
       <video
-        src="https://r2.guns.lol/afe3915a-1128-4e01-999a-7d989422f35c.mp4"
+        src="https://r2.guns.lol/14c8f693-ecc2-409f-8bf9-e8b01e7b3d0e.mp4"
         autoPlay
         loop
         muted
