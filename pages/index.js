@@ -11,6 +11,7 @@ export default function Home() {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [isAvatarLoading, setIsAvatarLoading] = useState(true);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
+  const [viewCount, setViewCount] = useState(0); // State for view count
   const audioRef = useRef(null);
   const discordId = '924822581117337691';
 
@@ -133,6 +134,36 @@ export default function Home() {
       ws.close();
     };
   }, [discordId]);
+
+  // Handle client-side view counter
+  useEffect(() => {
+    // Generate a unique visitor ID (simple UUID-like string)
+    const generateVisitorId = () => {
+      return 'visitor-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    };
+
+    // Get or set visitor ID
+    let visitorId = localStorage.getItem('visitorId');
+    if (!visitorId) {
+      visitorId = generateVisitorId();
+      localStorage.setItem('visitorId', visitorId);
+    }
+
+    // Get or initialize view count
+    let views = localStorage.getItem('viewCount');
+    let visitors = JSON.parse(localStorage.getItem('visitors') || '[]');
+
+    // If this visitor is new, increment view count
+    if (!visitors.includes(visitorId)) {
+      visitors.push(visitorId);
+      views = views ? parseInt(views) + 1 : 1;
+      localStorage.setItem('viewCount', views);
+      localStorage.setItem('visitors', JSON.stringify(visitors));
+    }
+
+    // Update state with view count
+    setViewCount(views ? parseInt(views) : 0);
+  }, []);
 
   // Handle audio playback and track switching
   useEffect(() => {
@@ -632,11 +663,19 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="absolute bottom-4 left-4 flex items-center space-x-1 text-sm text-white/70">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 9a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5a5 5 0 0 1 5-5a5 5 0 0 1 5 5a5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5" />
-          </svg>
-          <span>1</span>
+        <div className="absolute bottom-4 left-4 flex items-center space-x-4 text-sm text-white/70">
+          <div className="flex items-center space-x-1">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 9a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5a5 5 0 0 1 5-5a5 5 0 0 1 5 5a5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5" />
+            </svg>
+            <span>{viewCount}</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 18a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v12zM5 6H3v12h2V6zm16 0h-2v12h2V6z" />
+            </svg>
+            <span>1</span>
+          </div>
         </div>
       </div>
 
