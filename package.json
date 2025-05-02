@@ -15,7 +15,8 @@
     "next": "^15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-transition-group": "^4.4.5"
+    "react-transition-group": "^4.4.5",
+    "react-use-lanyard": "^0.3.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.4",

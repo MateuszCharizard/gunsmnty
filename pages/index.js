@@ -11,7 +11,7 @@ export default function Home() {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [isAvatarLoading, setIsAvatarLoading] = useState(true);
   const [isContentLoaded, setIsContentLoaded] = useState(false);
-  const [viewCount, setViewCount] = useState(0); // State for view count
+  const [viewCount, setViewCount] = useState(0);
   const audioRef = useRef(null);
   const discordId = '924822581117337691';
 
@@ -33,7 +33,7 @@ export default function Home() {
     },
     {
       id: '3',
-      name: 'On Tha Line',
+      name: 'On Tha Linë',
       artist: 'Yeat',
       src: 'https://r2.guns.lol/181032ba-9209-4187-816e-a4a15d081e49.mp3',
       cover: 'https://i.snipp.gg/924822581117337691/49fa4cc68dd59ded58028e7811db44de.jpg',
@@ -137,23 +137,19 @@ export default function Home() {
 
   // Handle client-side view counter
   useEffect(() => {
-    // Generate a unique visitor ID (simple UUID-like string)
     const generateVisitorId = () => {
       return 'visitor-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     };
 
-    // Get or set visitor ID
     let visitorId = localStorage.getItem('visitorId');
     if (!visitorId) {
       visitorId = generateVisitorId();
       localStorage.setItem('visitorId', visitorId);
     }
 
-    // Get or initialize view count
     let views = localStorage.getItem('viewCount');
     let visitors = JSON.parse(localStorage.getItem('visitors') || '[]');
 
-    // If this visitor is new, increment view count
     if (!visitors.includes(visitorId)) {
       visitors.push(visitorId);
       views = views ? parseInt(views) + 1 : 1;
@@ -161,7 +157,6 @@ export default function Home() {
       localStorage.setItem('visitors', JSON.stringify(visitors));
     }
 
-    // Update state with view count
     setViewCount(views ? parseInt(views) : 0);
   }, []);
 
@@ -170,6 +165,7 @@ export default function Home() {
     const audio = audioRef.current;
     if (audio) {
       audio.src = audioTracks[currentTrackIndex].src;
+      audio.volume = volume;
       setIsAudioLoading(true);
       setIsCoverLoading(true);
 
@@ -192,14 +188,6 @@ export default function Home() {
       };
     }
   }, [currentTrackIndex]);
-
-  // Update audio volume without restarting
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.volume = volume;
-    }
-  }, [volume]);
 
   // Toggle volume slider
   const toggleVolumeSlider = () => {
@@ -383,7 +371,7 @@ export default function Home() {
       <CSSTransition
         nodeRef={nodeRef}
         in={trackIndex === currentTrackIndex}
-        timeout={600}
+        timeout={800}
         classNames="audio-box"
         unmountOnExit
       >
@@ -657,7 +645,13 @@ export default function Home() {
               max="1"
               step="0.01"
               value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              onChange={(e) => {
+                const newVolume = parseFloat(e.target.value);
+                setVolume(newVolume);
+                if (audioRef.current) {
+                  audioRef.current.volume = newVolume;
+                }
+              }}
               className="w-28 h-1 bg-white/20 rounded-full appearance-none cursor-pointer transition-all duration-200 ease-out"
             />
           </div>
@@ -795,21 +789,25 @@ export default function Home() {
         }
         .audio-box-enter {
           opacity: 0;
-          transform: translateX(50px) scale(0.9);
+          transform: translateY(20px) scale(0.95);
+          filter: blur(2px);
         }
         .audio-box-enter-active {
           opacity: 1;
-          transform: translateX(0) scale(1);
-          transition: opacity 600ms ease-in-out, transform 600ms ease-in-out;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+          transition: opacity 800ms ease-in-out, transform 800ms ease-in-out, filter 800ms ease-in-out;
         }
         .audio-box-exit {
           opacity: 1;
-          transform: translateX(0) scale(1);
+          transform: translateY(0) scale(1);
+          filter: blur(0);
         }
         .audio-box-exit-active {
           opacity: 0;
-          transform: translateX(-50px) scale(0.9);
-          transition: opacity 600ms ease-in-out, transform 600ms ease-in-out;
+          transform: translateY(-20px) scale(0.95);
+          filter: blur(2px);
+          transition: opacity 800ms ease-in-out, transform 800ms ease-in-out, filter 800ms ease-in-out;
         }
       `}</style>
     </div>
